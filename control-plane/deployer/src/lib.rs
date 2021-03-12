@@ -86,6 +86,11 @@ pub struct StartOptions {
     #[structopt(short, long, default_value = "1")]
     pub mayastors: u32,
 
+    /// Grpc IP for a single mayastor instance
+    /// todo: use multiple ports for >1 mayastor instances
+    #[structopt(short, long)]
+    pub grpc_mayastor_ip: Option<String>,
+
     /// Use this custom image for the jaeger tracing service
     #[structopt(long, requires = "jaeger")]
     pub jaeger_image: Option<String>,
@@ -106,6 +111,10 @@ pub struct StartOptions {
     /// Name of the cluster - currently only one allowed at a time
     #[structopt(short, long, default_value = DEFAULT_CLUSTER_NAME)]
     pub cluster_name: String,
+
+    /// Use an external nats server with the following schema: $ip:$port
+    #[structopt(short, long)]
+    pub nats_server: Option<String>,
 }
 
 impl StartOptions {

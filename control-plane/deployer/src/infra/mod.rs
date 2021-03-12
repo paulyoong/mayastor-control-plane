@@ -94,10 +94,12 @@ macro_rules! impl_ctrlp_agents {
                         .status()?;
                     build_error(&format!("the {} agent", name), status.code())?;
                 }
-                Ok(cfg.add_container_bin(
-                    &name,
-                    Binary::from_dbg(&name).with_nats("-n"),
-                ))
+                let binary = if let Some(nats) = &options.nats_server {
+                    Binary::from_dbg(&name).with_args(vec!["-n", nats])
+                } else {
+                    Binary::from_dbg(&name).with_nats("-n")
+                };
+                Ok(cfg.add_container_bin(&name, binary))
             }
             async fn start(&self, _options: &StartOptions, cfg: &ComposeTest) -> Result<(), Error> {
                 let name = stringify!($name).to_ascii_lowercase();

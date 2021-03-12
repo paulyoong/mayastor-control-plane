@@ -35,7 +35,7 @@ mkShell {
     docker
   ]
   ++ pkgs.lib.optional (!norust) channel.nightly.rust
-  ++ pkgs.lib.optional (!nomayastor) mayastor.units.debug.mayastor;
+  ++ pkgs.lib.optional (!nomayastor) mayastor.units.release.mayastor;
 
   LIBCLANG_PATH = control-plane.LIBCLANG_PATH;
   PROTOC = control-plane.PROTOC;
