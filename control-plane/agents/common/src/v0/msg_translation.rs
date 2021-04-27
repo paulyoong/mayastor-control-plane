@@ -5,6 +5,7 @@ use mbus_api::{
     v0::{ChildState, NexusState, Protocol, ReplicaState},
 };
 use rpc::mayastor as rpc;
+use std::str::FromStr;
 
 /// Trait for converting rpc messages to message bus messages.
 pub trait RpcToMessageBus {
@@ -117,6 +118,27 @@ impl RpcToMessageBus for rpc::Nexus {
             children: self.children.iter().map(|c| c.to_mbus()).collect(),
             device_uri: self.device_uri.clone(),
             rebuilds: self.rebuilds,
+            share: uri_to_protocol(&self.device_uri),
+        }
+    }
+}
+
+/// Convert a device URI to a share Protocol
+/// Uses the URI scheme to determine the protocol
+/// Temporary WA until the share is added to the mayastor RPC
+fn uri_to_protocol(uri: &str) -> mbus::Protocol {
+    match reqwest::Url::from_str(uri) {
+        Ok(url) => match url.scheme() {
+            "nvmf" => mbus::Protocol::Nvmf,
+            "iscsi" => mbus::Protocol::Iscsi,
+            "nbd" => mbus::Protocol::Nbd,
+            // odd, it's unknown, set it to Off for now but maybe we should have an
+            // "other" Protocol variant?
+            _ => mbus::Protocol::Off,
+        },
+        Err(error) => {
+            tracing::error!("error parsing uri's ({}) protocol: {}", uri, error);
+            mbus::Protocol::Off
         }
     }
 }

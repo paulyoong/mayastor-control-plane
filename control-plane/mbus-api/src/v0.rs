@@ -897,6 +897,8 @@ pub struct Nexus {
     pub device_uri: String,
     /// total number of rebuild tasks
     pub rebuilds: u32,
+    /// protocol used for exposing the nexus
+    pub share: Protocol,
 }
 
 /// Child information
@@ -1020,6 +1022,24 @@ pub struct ShareNexus {
 }
 bus_impl_message_all!(ShareNexus, ShareNexus, String, Nexus);
 
+impl From<(&Nexus, Option<String>, NexusShareProtocol)> for ShareNexus {
+    fn from((nexus, key, protocol): (&Nexus, Option<String>, NexusShareProtocol)) -> Self {
+        Self {
+            node: nexus.node.clone(),
+            uuid: nexus.uuid.clone(),
+            key,
+            protocol,
+        }
+    }
+}
+impl From<&Nexus> for UnshareNexus {
+    fn from(from: &Nexus) -> Self {
+        Self {
+            node: from.node.clone(),
+            uuid: from.uuid.clone(),
+        }
+    }
+}
 impl From<ShareNexus> for UnshareNexus {
     fn from(share: ShareNexus) -> Self {
         Self {
