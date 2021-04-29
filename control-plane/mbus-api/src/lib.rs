@@ -290,10 +290,6 @@ pub enum ResourceKind {
     Pool,
     /// Replica resource
     Replica,
-    /// Replica state
-    ReplicaState,
-    /// Replica spec
-    ReplicaSpec,
     /// Nexus resource
     Nexus,
     /// Child resource

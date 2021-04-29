@@ -76,29 +76,23 @@ impl<T> StoreValue for T where T: Sync + serde::Serialize {}
 /// Trait defining the operations that can be performed on a key-value store.
 #[async_trait]
 pub trait Store: Sync + Send + Clone {
-    /// Put entry into the store.
-    async fn put_kv<K: StoreKey, V: StoreValue>(
-        &mut self,
-        key: &K,
-        value: &V,
-    ) -> Result<(), StoreError>;
-    /// Get an entry from the store.
-    async fn get_kv<K: StoreKey>(&mut self, key: &K) -> Result<Value, StoreError>;
-    /// Delete an entry from the store.
-    async fn delete_kv<K: StoreKey>(&mut self, key: &K) -> Result<(), StoreError>;
-    /// Watch for changes to the entry with the given key.
-    /// Returns a channel which will be signalled when an event occurs.
-    async fn watch_kv<K: StoreKey>(
-        &mut self,
-        key: &K,
-    ) -> Result<Receiver<Result<WatchEvent, StoreError>>, StoreError>;
-
+    /// Put an object in the store.
     async fn put_obj<O: StorableObject>(&mut self, object: &O) -> Result<(), StoreError>;
 
+    /// Get an object of a known type from the store.
     async fn get_obj<O: StorableObject>(&mut self, _key: &O::Key) -> Result<O, StoreError>;
 
+    /// Get an opaque object from the store.
+    /// Used when the stored object type is unknown.
+    async fn get_opaque_obj<K: StoreKey>(&mut self, key: &K) -> Result<Value, StoreError>;
+
+    /// Delete an object from the store.
+    async fn delete_obj<K: ObjectKey>(&mut self, key: &K) -> Result<(), StoreError>;
+
+    /// Watch an object in the store.
     async fn watch_obj<K: ObjectKey>(&mut self, key: &K) -> Result<StoreWatchReceiver, StoreError>;
 
+    /// Determine if the store is online.
     async fn online(&mut self) -> bool;
 }
 
@@ -111,6 +105,12 @@ pub trait ObjectKey: Sync + Send {
     }
     fn key_type(&self) -> StorableObjectType;
     fn key_uuid(&self) -> String;
+}
+
+/// create a key based on the object's key trait
+/// todo: version properly
+pub fn get_key<K: ObjectKey + ?Sized>(k: &K) -> String {
+    format!("{}/{}", k.key_type().to_string(), k.key_uuid())
 }
 
 /// Implemented by objects which get stored in the store, eg: Volume
@@ -140,10 +140,4 @@ pub enum StorableObjectType {
     VolumeState,
     ChildSpec,
     ChildState,
-}
-
-/// create a key based on the object's key trait
-/// todo: version properly
-pub fn get_key<K: ObjectKey + ?Sized>(k: &K) -> String {
-    format!("\"r/{}/{}\"", k.key_type().to_string(), k.key_uuid())
 }

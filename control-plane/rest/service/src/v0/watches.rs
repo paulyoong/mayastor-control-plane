@@ -7,13 +7,13 @@ pub(super) fn configure(cfg: &mut paperclip::actix::web::ServiceConfig) {
         .service(get_watches);
 }
 
-#[put("/watches/volume/{volume_id}", tags(Watches))]
+#[put("/watches/VolumeState/{volume_id}", tags(Watches))]
 async fn put_watch(
     web::Path(volume_id): web::Path<VolumeId>,
     web::Query(watch): web::Query<WatchTypeQueryParam>,
 ) -> Result<Json<()>, RestError> {
     CreateWatch {
-        id: WatchResourceId::Volume(volume_id),
+        id: WatchResourceId::VolumeState(volume_id),
         callback: WatchCallback::Uri(watch.callback.to_string()),
         watch_type: WatchType::Actual,
     }
@@ -23,15 +23,16 @@ async fn put_watch(
     Ok(Json(()))
 }
 
-#[get("/watches/volume/{volume_id}", tags(Watches))]
+#[get("/watches/VolumeState/{volume_id}", tags(Watches))]
 async fn get_watches(
     web::Path(volume_id): web::Path<VolumeId>,
 ) -> Result<Json<Vec<RestWatch>>, RestError> {
     let watches = GetWatchers {
-        resource: WatchResourceId::Volume(volume_id),
+        resource: WatchResourceId::VolumeState(volume_id),
     }
     .request()
     .await?;
+
     let watches = watches.0.iter();
     let watches = watches
         .filter_map(|w| RestWatch::try_from(w).ok())
@@ -39,13 +40,13 @@ async fn get_watches(
     Ok(Json(watches))
 }
 
-#[delete("/watches/volume/{volume_id}", tags(Watches))]
+#[delete("/watches/VolumeState/{volume_id}", tags(Watches))]
 async fn del_watch(
     web::Path(volume_id): web::Path<VolumeId>,
     web::Query(watch): web::Query<WatchTypeQueryParam>,
 ) -> Result<JsonUnit, RestError> {
     DeleteWatch {
-        id: WatchResourceId::Volume(volume_id),
+        id: WatchResourceId::VolumeState(volume_id),
         callback: WatchCallback::Uri(watch.callback.to_string()),
         watch_type: WatchType::Actual,
     }

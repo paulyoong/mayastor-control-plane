@@ -312,7 +312,7 @@ async fn client_test(mayastor: &NodeId, test: &ComposeTest, auth: &bool) {
             .first()
     );
 
-    let watch_volume = WatchResourceId::Volume(volume.uuid);
+    let watch_volume = WatchResourceId::VolumeState(volume.uuid);
     let callback = url::Url::parse("http://lala/test").unwrap();
 
     let watchers = client.get_watches(watch_volume.clone()).await.unwrap();

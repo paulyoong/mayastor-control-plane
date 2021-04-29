@@ -33,7 +33,7 @@ use mbus_api::{
     ResourceKind,
 };
 use store::{
-    store::{ObjectKey, Store, StoreError},
+    store::{Store, StoreError},
     types::v0::{
         nexus::{NexusSpec, NexusSpecKey, NexusSpecState},
         replica::ReplicaSpec,
@@ -385,9 +385,8 @@ impl ResourceSpecsLocked {
                         // if it fails, then fail the request and let the op
                         // retry
                         let mut store = registry.store.lock().await;
-                        if let Err(error) = store
-                            .delete_kv(&NexusSpecKey::from(&request.uuid).key())
-                            .await
+                        if let Err(error) =
+                            store.delete_obj(&NexusSpecKey::from(&request.uuid)).await
                         {
                             if !matches!(error, StoreError::MissingEntry { .. }) {
                                 return Err(error.into());
@@ -889,9 +888,8 @@ impl ResourceSpecsLocked {
                     volume.updating = false;
                     {
                         let mut store = registry.store.lock().await;
-                        if let Err(error) = store
-                            .delete_kv(&VolumeSpecKey::from(&request.uuid).key())
-                            .await
+                        if let Err(error) =
+                            store.delete_obj(&VolumeSpecKey::from(&request.uuid)).await
                         {
                             if !matches!(error, StoreError::MissingEntry { .. }) {
                                 return Err(error.into());

@@ -23,7 +23,7 @@ use mbus_api::{
     ResourceKind,
 };
 use store::{
-    store::{ObjectKey, Store, StoreError},
+    store::{Store, StoreError},
     types::v0::{
         pool::{PoolSpec, PoolSpecKey, PoolSpecState},
         replica::{ReplicaOperation, ReplicaSpec, ReplicaSpecKey, ReplicaSpecState},
@@ -146,7 +146,7 @@ impl ResourceSpecsLocked {
             drop(pool_spec);
             self.del_pool(&request.id).await;
             let mut store = registry.store.lock().await;
-            let _ = store.delete_kv(&PoolSpecKey::from(&request.id).key()).await;
+            let _ = store.delete_obj(&PoolSpecKey::from(&request.id)).await;
         }
 
         result
@@ -203,7 +203,7 @@ impl ResourceSpecsLocked {
                 // remove the spec from the persistent store
                 // if it fails, then fail the request and let the op retry
                 let mut store = registry.store.lock().await;
-                if let Err(error) = store.delete_kv(&PoolSpecKey::from(&request.id).key()).await {
+                if let Err(error) = store.delete_obj(&PoolSpecKey::from(&request.id)).await {
                     if !matches!(error, StoreError::MissingEntry { .. }) {
                         return Err(error.into());
                     }
@@ -285,9 +285,7 @@ impl ResourceSpecsLocked {
             drop(replica_spec);
             self.del_replica(&request.uuid).await;
             let mut store = registry.store.lock().await;
-            let _ = store
-                .delete_kv(&ReplicaSpecKey::from(&request.uuid).key())
-                .await;
+            let _ = store.delete_obj(&ReplicaSpecKey::from(&request.uuid)).await;
         }
 
         result
@@ -342,9 +340,8 @@ impl ResourceSpecsLocked {
                         // if it fails, then fail the request and let the op
                         // retry
                         let mut store = registry.store.lock().await;
-                        if let Err(error) = store
-                            .delete_kv(&ReplicaSpecKey::from(&request.uuid).key())
-                            .await
+                        if let Err(error) =
+                            store.delete_obj(&ReplicaSpecKey::from(&request.uuid)).await
                         {
                             if !matches!(error, StoreError::MissingEntry { .. }) {
                                 return Err(error.into());

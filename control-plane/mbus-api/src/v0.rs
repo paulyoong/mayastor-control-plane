@@ -1423,33 +1423,42 @@ pub type Resource = WatchResourceId;
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)]
 pub enum WatchResourceId {
-    /// nodes
-    Node(NodeId),
-    /// pools
-    Pool(PoolId),
-    /// replicas
-    Replica(ReplicaId),
+    /// node spec
+    NodeSpec(NodeId),
+    /// pool spec
+    PoolSpec(PoolId),
     /// replica state
     ReplicaState(ReplicaId),
     /// replica spec
     ReplicaSpec(ReplicaId),
-    /// nexuses
-    Nexus(NexusId),
-    /// volumes
-    Volume(VolumeId),
+    /// nexus state
+    NexusState(NexusId),
+    /// nexus spec
+    NexusSpec(NexusId),
+    /// volume state
+    VolumeState(VolumeId),
+    /// volume spec
+    VolumeSpec(VolumeId),
+    /// child state
+    ChildState(ReplicaId),
+    /// child spec
+    ChildSpec(ReplicaId),
 }
+
 impl Default for WatchResourceId {
     fn default() -> Self {
-        Self::Node(Default::default())
+        Self::NodeSpec(Default::default())
     }
 }
+
 impl ToString for WatchResourceId {
     fn to_string(&self) -> String {
         match self {
-            WatchResourceId::Node(id) => format!("node/{}", id.to_string()),
-            WatchResourceId::Pool(id) => format!("pool/{}", id.to_string()),
-            WatchResourceId::Replica(id) => {
-                format!("replica/{}", id.to_string())
+            WatchResourceId::NodeSpec(id) => {
+                format!("node_spec/{}", id.to_string())
+            }
+            WatchResourceId::PoolSpec(id) => {
+                format!("pool_spec/{}", id.to_string())
             }
             WatchResourceId::ReplicaState(id) => {
                 format!("replica_state/{}", id.to_string())
@@ -1457,8 +1466,24 @@ impl ToString for WatchResourceId {
             WatchResourceId::ReplicaSpec(id) => {
                 format!("replica_spec/{}", id.to_string())
             }
-            WatchResourceId::Nexus(id) => format!("nexus/{}", id.to_string()),
-            WatchResourceId::Volume(id) => format!("volume/{}", id.to_string()),
+            WatchResourceId::NexusState(id) => {
+                format!("nexus_state/{}", id.to_string())
+            }
+            WatchResourceId::NexusSpec(id) => {
+                format!("nexus_spec/{}", id.to_string())
+            }
+            WatchResourceId::VolumeState(id) => {
+                format!("VolumeState/{}", id.to_string())
+            }
+            WatchResourceId::VolumeSpec(id) => {
+                format!("volume_spec/{}", id.to_string())
+            }
+            WatchResourceId::ChildState(id) => {
+                format!("child_state/{}", id.to_string())
+            }
+            WatchResourceId::ChildSpec(id) => {
+                format!("child_spec/{}", id.to_string())
+            }
         }
     }
 }

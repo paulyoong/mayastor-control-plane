@@ -35,15 +35,6 @@ use tokio::{
     task::JoinHandle,
 };
 
-impl ObjectKey for WatchCfgId {
-    fn key_type(&self) -> StorableObjectType {
-        StorableObjectType::WatchConfig
-    }
-    fn key_uuid(&self) -> String {
-        self.id.to_string()
-    }
-}
-
 /// Watch configuration with the resource as a key
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -51,6 +42,14 @@ struct WatchCfg {
     pub watch_id: WatchCfgId,
     pub watchers: Vec<WatchParamsCfg>,
 }
+
+impl WatchCfg {
+    /// Returns the key of the object being watched.
+    fn watched_obj_key(&self) -> String {
+        self.watch_id.id.to_string()
+    }
+}
+
 impl StorableObject for WatchCfg {
     type Key = WatchCfgId;
     fn key(&self) -> Self::Key {
@@ -96,6 +95,15 @@ impl Deref for WatchParamsCfg {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct WatchCfgId {
     id: WatchResourceId,
+}
+
+impl ObjectKey for WatchCfgId {
+    fn key_type(&self) -> StorableObjectType {
+        StorableObjectType::WatchConfig
+    }
+    fn key_uuid(&self) -> String {
+        self.id.to_string()
+    }
 }
 
 impl From<&CreateWatch> for WatchCfgId {
@@ -161,7 +169,7 @@ impl WatchCfg {
         {
             // make sure the target resource exists
             let mut store = store.lock().await;
-            match store.get_kv(&self.watch_id.id.key()).await {
+            match store.get_opaque_obj(&self.watched_obj_key()).await {
                 Ok(_) => Ok(()),
                 Err(StoreError::MissingEntry {
                     ..
@@ -182,16 +190,20 @@ impl WatchCfg {
         Ok(())
     }
 
-    /// Map a watch resource to a resource kind
+    /// Map a watch resource to a resource kind.
+    /// The specific watch resource gets mapped to a more generic resource kind.
     fn resource_to_kind(resource: &WatchResourceId) -> ResourceKind {
         match &resource {
-            WatchResourceId::Node(_) => ResourceKind::Node,
-            WatchResourceId::Pool(_) => ResourceKind::Pool,
-            WatchResourceId::Replica(_) => ResourceKind::Replica,
-            WatchResourceId::ReplicaState(_) => ResourceKind::ReplicaState,
-            WatchResourceId::ReplicaSpec(_) => ResourceKind::ReplicaSpec,
-            WatchResourceId::Nexus(_) => ResourceKind::Nexus,
-            WatchResourceId::Volume(_) => ResourceKind::Volume,
+            WatchResourceId::NodeSpec(_) => ResourceKind::Node,
+            WatchResourceId::PoolSpec(_) => ResourceKind::Pool,
+            WatchResourceId::ReplicaState(_) => ResourceKind::Replica,
+            WatchResourceId::ReplicaSpec(_) => ResourceKind::Replica,
+            WatchResourceId::NexusState(_) => ResourceKind::Nexus,
+            WatchResourceId::NexusSpec(_) => ResourceKind::Nexus,
+            WatchResourceId::VolumeState(_) => ResourceKind::Volume,
+            WatchResourceId::VolumeSpec(_) => ResourceKind::Volume,
+            WatchResourceId::ChildState(_) => ResourceKind::Child,
+            WatchResourceId::ChildSpec(_) => ResourceKind::Child,
         }
     }
 
@@ -349,7 +361,7 @@ impl WatchCfg {
         match store.watch_obj(id).await {
             Ok(channel) => {
                 // get the current value
-                match store.get_kv(&id.key()).await {
+                match store.get_opaque_obj(&id.key()).await {
                     Ok(obj) => Some((obj, channel)),
                     // deleted, so bail out
                     Err(StoreError::MissingEntry {

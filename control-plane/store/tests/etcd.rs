@@ -9,7 +9,8 @@ use std::{
 };
 use store::{
     etcd::Etcd,
-    store::{Store, WatchEvent},
+    store::{ObjectKey, StorableObject, Store, WatchEvent},
+    types::{v0::pool::PoolSpec, SpecState},
 };
 use tokio::task::JoinHandle;
 
@@ -51,47 +52,51 @@ async fn etcd() {
         .await
         .expect("Failed to connect to etcd.");
 
-    let key = serde_json::json!("key");
-    let mut data = TestStruct {
-        name: "John Doe".to_string(),
-        value: 100,
-        msg: "Hello etcd".to_string(),
+    let mut pool_spec = PoolSpec {
+        node: "test_node".into(),
+        id: "9c87b978-4e0b-467f-80f1-ec518f8bb472".into(),
+        disks: vec!["test_disk".into()],
+        state: SpecState::Creating,
+        labels: vec!["test_label".into()],
+        updating: false,
     };
 
     // Add an entry to the store, read it back and make sure it is correct.
     store
-        .put_kv(&key.to_string(), &serde_json::json!(&data))
+        .put_obj(&pool_spec)
         .await
-        .expect("Failed to 'put' to etcd");
-    let v = store.get_kv(&key).await.expect("Failed to 'get' from etcd");
-    let result: TestStruct = serde_json::from_value(v).expect("Failed to deserialise value");
-    assert_eq!(data, result);
+        .expect("Failed to 'put' pool spec in etcd");
+    let persisted_pool_spec: PoolSpec = store
+        .get_obj(&pool_spec.key())
+        .await
+        .expect("Failed to 'get' pool spec from etcd");
+    assert_eq!(pool_spec, persisted_pool_spec);
 
     // Start a watcher which should send a message when the subsequent 'put'
     // event occurs.
-    let (put_hdl, r) = spawn_watcher(&key, &mut store).await;
+    let (put_hdl, r) = spawn_watcher(&pool_spec.key(), &mut store).await;
 
     // Modify entry.
-    data.value = 200;
+    pool_spec.node = "modified_node".into();
     store
-        .put_kv(&key.to_string(), &serde_json::json!(&data))
+        .put_obj(&pool_spec)
         .await
-        .expect("Failed to 'put' to etcd");
+        .expect("Failed to 'put' pool spec in etcd");
 
     // Wait up to 1 second for the watcher to see the put event.
     let msg = r
         .recv_timeout(Duration::from_secs(1))
         .expect("Timed out waiting for message");
-    let result: TestStruct = match msg {
+    let persisted_pool_spec: PoolSpec = match msg {
         WatchEvent::Put(_k, v) => serde_json::from_value(v).expect("Failed to deserialise value"),
         _ => panic!("Expected a 'put' event"),
     };
-    assert_eq!(result, data);
+    assert_eq!(pool_spec, persisted_pool_spec);
 
     // Start a watcher which should send a message when the subsequent 'delete'
     // event occurs.
-    let (del_hdl, r) = spawn_watcher(&key, &mut store).await;
-    store.delete_kv(&key).await.unwrap();
+    let (del_hdl, r) = spawn_watcher(&pool_spec.key(), &mut store).await;
+    store.delete_obj(&pool_spec.key()).await.unwrap();
 
     // Wait up to 1 second for the watcher to see the delete event.
     let msg = r
@@ -101,7 +106,7 @@ async fn etcd() {
         WatchEvent::Delete => {
             // The entry is deleted. Let's check that a subsequent 'get' fails.
             store
-                .get_kv(&key)
+                .get_obj::<PoolSpec>(&pool_spec.key())
                 .await
                 .expect_err("Entry should have been deleted");
         }
@@ -114,12 +119,12 @@ async fn etcd() {
 
 /// Spawn a watcher thread which watches for a single change to the entry with
 /// the given key.
-async fn spawn_watcher<W: Store>(
-    key: &serde_json::Value,
+async fn spawn_watcher<K: ObjectKey, W: Store>(
+    key: &K,
     store: &mut W,
 ) -> (JoinHandle<()>, Receiver<WatchEvent>) {
     let (s, r) = oneshot::channel();
-    let mut watcher = store.watch_kv(&key).await.expect("Failed to watch");
+    let mut watcher = store.watch_obj(key).await.expect("Failed to watch");
     let hdl = tokio::spawn(async move {
         match watcher.recv().await.unwrap() {
             Ok(event) => {

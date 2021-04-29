@@ -12,7 +12,6 @@ use crate::store::{
     StoreError,
     StoreError::MissingEntry,
     StoreKey,
-    StoreValue,
     ValueString,
     Watch,
     WatchEvent,
@@ -46,63 +45,6 @@ impl Etcd {
 
 #[async_trait]
 impl Store for Etcd {
-    /// 'Put' a key-value pair into etcd.
-    async fn put_kv<K: StoreKey, V: StoreValue>(
-        &mut self,
-        key: &K,
-        value: &V,
-    ) -> Result<(), StoreError> {
-        let vec_value = serde_json::to_vec(value).context(SerialiseValue)?;
-        self.0
-            .put(key.to_string(), vec_value, None)
-            .await
-            .context(Put {
-                key: key.to_string(),
-                value: serde_json::to_string(value).context(SerialiseValue)?,
-            })?;
-        Ok(())
-    }
-
-    /// 'Get' the value for the given key from etcd.
-    async fn get_kv<K: StoreKey>(&mut self, key: &K) -> Result<Value, StoreError> {
-        let resp = self.0.get(key.to_string(), None).await.context(Get {
-            key: key.to_string(),
-        })?;
-        match resp.kvs().first() {
-            Some(kv) => Ok(
-                serde_json::from_slice(kv.value()).context(DeserialiseValue {
-                    value: kv.value_str().context(ValueString {})?,
-                })?,
-            ),
-            None => Err(MissingEntry {
-                key: key.to_string(),
-            }),
-        }
-    }
-
-    /// 'Delete' the entry with the given key from etcd.
-    async fn delete_kv<K: StoreKey>(&mut self, key: &K) -> Result<(), StoreError> {
-        self.0.delete(key.to_string(), None).await.context(Delete {
-            key: key.to_string(),
-        })?;
-        Ok(())
-    }
-
-    /// 'Watch' the etcd entry with the given key.
-    /// A receiver channel is returned which is signalled when the entry with
-    /// the given key is changed.
-    async fn watch_kv<K: StoreKey>(
-        &mut self,
-        key: &K,
-    ) -> Result<Receiver<Result<WatchEvent, StoreError>>, StoreError> {
-        let (sender, receiver) = channel(100);
-        let (watcher, stream) = self.0.watch(key.to_string(), None).await.context(Watch {
-            key: key.to_string(),
-        })?;
-        watch(watcher, stream, sender);
-        Ok(receiver)
-    }
-
     async fn put_obj<O: StorableObject>(&mut self, object: &O) -> Result<(), StoreError> {
         let key = object.key().key();
         let vec_value = serde_json::to_vec(object).context(SerialiseValue)?;
@@ -127,6 +69,30 @@ impl Store for Etcd {
                 key: key.key(),
             }),
         }
+    }
+
+    async fn get_opaque_obj<K: StoreKey>(&mut self, key: &K) -> Result<Value, StoreError> {
+        let resp = self.0.get(key.to_string(), None).await.context(Get {
+            key: key.to_string(),
+        })?;
+        match resp.kvs().first() {
+            Some(kv) => Ok(
+                serde_json::from_slice(kv.value()).context(DeserialiseValue {
+                    value: kv.value_str().context(ValueString {})?,
+                })?,
+            ),
+            None => Err(MissingEntry {
+                key: key.to_string(),
+            }),
+        }
+    }
+
+    /// 'Delete' the entry with the given key from etcd.
+    async fn delete_obj<K: ObjectKey>(&mut self, key: &K) -> Result<(), StoreError> {
+        self.0.delete(key.key(), None).await.context(Delete {
+            key: key.key(),
+        })?;
+        Ok(())
     }
 
     async fn watch_obj<K: ObjectKey>(
