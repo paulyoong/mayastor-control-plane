@@ -445,7 +445,7 @@ impl ResourceSpecsLocked {
                         .await
                     {
                         tracing::warn!(replica.uuid=%spec.uuid, error=%error,
-                            "Replica destruction failed. This will be garbage collected later"
+                            "Replica destruction failed. This will be garbage collected later."
                         );
                     }
                 } else {
