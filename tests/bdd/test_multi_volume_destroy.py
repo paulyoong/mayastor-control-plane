@@ -14,7 +14,7 @@ from openapi.model.volume_policy import VolumePolicy
 from openapi.model.protocol import Protocol
 from common.fio import Fio
 
-VOLUME_UUID = "5cd5378e-3f05-47f1-a830-a0f5873a144X"
+VOLUME_UUID = "5cd5378e-3f05-47f1-a830-a0f5873a1XXX"
 VOLUME_SIZE = 10485761
 NUM_VOLUME_REPLICAS = 2
 MAYASTOR_1 = "mayastor-1"
@@ -93,11 +93,19 @@ def check_all_mayastor_running():
 
 # Create and published the desired number of volumes.
 # Return the target URIs and volume UUIDs
-def create_and_publish_volumes(num_volumes):
+def create_and_publish_volumes(num_volumes, loop_num):
+    global uuid
     target_uris = []
     volume_uuids = []
     for i in range(0, num_volumes):
-        uuid = VOLUME_UUID.replace("X", str(i))
+        suffix = num_volumes * loop_num + i
+        if suffix < 10:
+            uuid = VOLUME_UUID.replace("XXX", "00{}".format(str(suffix)))
+        elif suffix < 100:
+            uuid = VOLUME_UUID.replace("XXX", "0{}".format(str(suffix)))
+        elif suffix < 1000:
+            uuid = VOLUME_UUID.replace("XXX", str(suffix))
+
         volume_uuids.append(uuid)
         request = CreateVolumeBody(
             VolumePolicy(False), NUM_VOLUME_REPLICAS, VOLUME_SIZE
@@ -147,8 +155,10 @@ def wait_for_fio_processes(processes):
 
 def test_mutli_volume():
     num_volumes = 10
+    loop = 0
     while True:
-        target_uris, volume_uuids = create_and_publish_volumes(num_volumes)
+        loop += 1
+        target_uris, volume_uuids = create_and_publish_volumes(num_volumes, loop)
         nvme_devices = nvme_discover_and_connect(target_uris)
         fio_processes = run_fio_processes(nvme_devices)
         wait_for_fio_processes(fio_processes)
