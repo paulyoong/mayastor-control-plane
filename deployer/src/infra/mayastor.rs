@@ -20,6 +20,7 @@ impl ComponentAction for Mayastor {
             .with_args(vec!["-n", &nats])
             .with_args(vec!["-N", &name])
             .with_args(vec!["-g", &mayastor_socket])
+            .with_args(vec!["-l0,1"])
             .with_bind("/tmp", "/host/tmp");
 
             if let Some(env) = &options.mayastor_env {
