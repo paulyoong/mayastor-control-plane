@@ -827,44 +827,6 @@ impl ResourceSpecsLocked {
         registry.get_volume(&state.uuid).await
     }
 
-    // /// Decrement the replica count of the given volume by 1
-    // /// Removes the replica from all volume nexuses
-    // async fn decrease_volume_replica(
-    //     &self,
-    //     registry: &Registry,
-    //     spec: Arc<Mutex<VolumeSpec>>,
-    //     state: VolumeState,
-    //     spec_clone: VolumeSpec,
-    //     mode: OperationMode,
-    // ) -> Result<Volume, SvcError> {
-    //     // Determine which replica is most suitable to be removed
-    //     let result = get_volume_replica_remove_candidate(&spec_clone, &state, registry).await;
-    //     // Can fail if meanwhile the state of a replica/nexus/child changes, so fail gracefully
-    //     let remove =
-    //         SpecOperations::validate_update_step(registry, result, &spec, &spec_clone).await?;
-    //
-    //     // Remove the replica from its nexus (where it exists as a child)
-    //     let result = self
-    //         .remove_volume_child_candidate(&spec_clone, registry, &remove, mode)
-    //         .await;
-    //     SpecOperations::validate_update_step(registry, result, &spec, &spec_clone).await?;
-    //
-    //     // todo: we could ignore it here, since we've already removed it from the nexus
-    //     // now remove the replica from the pool
-    //     let result = self
-    //         .destroy_replica_spec(
-    //             registry,
-    //             remove.spec(),
-    //             ReplicaOwners::from_volume(&state.uuid),
-    //             false,
-    //             mode,
-    //         )
-    //         .await;
-    //
-    //     SpecOperations::complete_update(registry, result, spec, spec_clone).await?;
-    //     registry.get_volume(&state.uuid).await
-    // }
-
     /// Sets a volume's replica count on the given `SetVolumeReplica` request
     pub(crate) async fn set_volume_replica(
         &self,

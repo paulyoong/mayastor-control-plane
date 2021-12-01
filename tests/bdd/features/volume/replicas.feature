@@ -18,6 +18,7 @@ Feature: Adjusting the volume replicas
 
   Scenario: decreasing the replica count when the runtime replica count matches the desired count
     Given a volume with 2 replicas
+    And no available pools for replacement replicas
     When the number of runtime replicas is 1
     And a user attempts to decrease the number of volume replicas from 2 to 1
     Then the volume spec should show 1 replica

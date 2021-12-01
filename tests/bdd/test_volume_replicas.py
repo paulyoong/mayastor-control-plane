@@ -135,6 +135,19 @@ def an_existing_volume():
     assert volume.spec.uuid == VOLUME_UUID
 
 
+@given("no available pools for replacement replicas")
+def no_available_pools_for_replacement_replicas():
+    """no available pools for replacement replicas."""
+    pool_api = common.get_pools_api()
+    pools = pool_api.get_pools()
+    assert len(pools) == 3
+
+    # Delete the additional pool so that a replacement replica cannot be created.
+    pool_api.del_pool(POOL_3_UUID)
+    pools = pool_api.get_pools()
+    assert len(pools) == 2
+
+
 @given("the number of volume replicas is greater than one")
 def the_number_of_volume_replicas_is_greater_than_one():
     """the number of volume replicas is greater than one."""
