@@ -16,6 +16,12 @@ Feature: Adjusting the volume replicas
   Scenario: setting volume replicas to zero
     Then setting the number of replicas to zero should fail with a suitable error
 
+  Scenario: decreasing the replica count when the runtime replica count matches the desired count
+    Given a volume with 2 replicas
+    When the number of runtime replicas is 1
+    And a user attempts to decrease the number of volume replicas from 2 to 1
+    Then the volume spec should show 1 replica
+
   # TODO: Enable this after handling the simple cases
 #  Scenario: replacing a faulted replica
 #    When Mayastor has marked a replica as faulted

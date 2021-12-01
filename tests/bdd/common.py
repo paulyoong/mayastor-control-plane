@@ -90,6 +90,13 @@ def kill_container(name):
     container.kill()
 
 
+# Stop a container with the given name.
+def stop_container(name):
+    docker_client = docker.from_env()
+    container = docker_client.containers.get(name)
+    container.stop()
+
+
 # Restart a container with the given name.
 def restart_container(name):
     docker_client = docker.from_env()
