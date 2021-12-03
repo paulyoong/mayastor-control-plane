@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package grpc;
+
+// Enum defining the various states that a resource spec can be in.
+enum SpecStatus {
+  Creating = 0;
+  Created = 1;
+  Deleting = 2;
+  Deleted = 3;
+}

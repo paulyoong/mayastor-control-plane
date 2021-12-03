@@ -13,6 +13,7 @@ members = [
     "kubectl-plugin",
     "openapi",
     "rpc",
-# Test mayastor through the rest api
+    "control-plane/grpc",
+    # Test mayastor through the rest api
     "tests/tests-mayastor",
 ]

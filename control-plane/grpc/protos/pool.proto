@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+import "common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+package grpc;
+
+// A Mayastor Storage Pool
+// It may have a spec which is the specification provided by the creator
+// It may have a state if such state is retrieved from a mayastor storage node
+message Pool {
+  // Desired specification of the pool and metadata
+  optional PoolDefinition definition = 1;
+  // Runtime state of the pool.
+  optional PoolState state = 2;
+}
+
+// Multiple pools
+message Pools {
+  repeated Pool pools = 1;
+}
+
+// PoolLabel is the type for the labels
+message PoolLabel {
+  map<string, string> labels = 1;
+}
+
+// Desired spec and the control plane related data
+message PoolDefinition {
+  // Client specification of the pool
+  PoolSpec spec = 1;
+  // Control plane related data for the pool
+  Metadata metadata = 2;
+}
+
+message Metadata {
+  // uuid of the pool
+  google.protobuf.StringValue uuid = 2;
+  // spec status of the pool
+  SpecStatus status = 4;
+}
+
+// User specification of a pool.
+message PoolSpec {
+  // id of the mayastor instance
+  string node_id = 1;
+  // id of the pool
+  string pool_id = 2;
+  // absolute disk paths claimed by the pool
+  repeated string disks = 3;
+  // labels to be set on the pool
+  optional PoolLabel labels = 5;
+}
+
+// Pool information
+message PoolState {
+  // id of the mayastor instance
+  string node_id = 1;
+  // id of the pool
+  string pool_id = 2;
+  // absolute disk paths claimed by the pool
+  repeated string disks_uri = 3;
+  // current status of the pool
+  PoolStatus status = 4;
+  // size of the pool in bytes
+  uint64 capacity = 5;
+  // used bytes from the pool
+  uint64 used = 6;
+}
+
+enum PoolStatus {
+  // unknown state
+  Unknown = 0;
+  // the pool is in normal working order
+  Online = 1;
+  // the pool has experienced a failure but can still function
+  Degraded = 2;
+  // the pool is completely inaccessible
+  Faulted = 3;
+}
+
+// Filter by Node id
+message NodeFilter{
+  string node_id = 1;
+}
+
+// Filter by Pool id
+message PoolFilter{
+  string pool_id = 1;
+}
+
+// Filter by Node and Pool id
+message NodePoolFilter{
+  string node_id = 1;
+  string pool_id = 2;
+}
+
+// Get all the pools from based on the args
+message GetPoolsRequest {
+  oneof filter {
+    NodeFilter node = 1;
+    PoolFilter pool = 2;
+    NodePoolFilter node_pool = 3;
+  }
+}
+
+// Create Pool Request
+message CreatePoolRequest {
+  // id of the mayastor instance
+  string node_id = 1;
+  // id of the pool
+  string pool_id = 2;
+  // disk device paths or URIs to be claimed by the pool
+  repeated string disks = 3;
+  // labels to be set on the pool
+  optional PoolLabel labels = 5;
+}
+
+// Destroy Pool Request
+message DestroyPoolRequest {
+  // id of the mayastor instance
+  string node_id = 1;
+  // id of the pool
+  string pool_id = 2;
+}
+
+// Service for managing storage pools
+service CoreGrpc {
+  rpc CreatePool (CreatePoolRequest) returns (Pool) {}
+  rpc DestroyPool (DestroyPoolRequest) returns (google.protobuf.Empty) {}
+  rpc GetPools (GetPoolsRequest) returns (Pools) {}
+}
