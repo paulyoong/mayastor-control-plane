@@ -1,5 +1,6 @@
 use super::*;
 use common_lib::types::v0::message_bus::{DestroyPool, Filter};
+use grpc::{pool_transport::PoolClient, traits::PoolOperations};
 use mbus_api::{
     message_bus::v0::{BusError, MessageBus, MessageBusTrait},
     ReplyErrorKind, ResourceKind,
@@ -44,7 +45,10 @@ impl apis::actix_server::Pools for RestApi {
     }
 
     async fn del_pool(Path(pool_id): Path<String>) -> Result<(), RestError<RestJsonError>> {
-        destroy_pool(Filter::Pool(pool_id.into())).await
+        let client = PoolClient::init();
+        client.destroy(pool_id).await;
+        Ok(())
+        //destroy_pool(Filter::Pool(pool_id.into())).await
     }
 
     async fn get_node_pool(

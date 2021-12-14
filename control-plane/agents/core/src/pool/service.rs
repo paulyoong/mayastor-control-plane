@@ -10,11 +10,24 @@ use common_lib::{
         store::OperationMode,
     },
 };
+use grpc::traits::PoolOperations;
 use snafu::OptionExt;
 
 #[derive(Debug, Clone)]
 pub(super) struct Service {
     registry: Registry,
+}
+
+#[tonic::async_trait]
+impl PoolOperations for Service {
+    async fn destroy(&self, pool_id: String) {
+        tracing::info!("DESTROY POOL RPC");
+        let req = DestroyPool {
+            node: "mayastor-1".into(),
+            id: pool_id.into(),
+        };
+        let _ = self.destroy_pool(&req).await;
+    }
 }
 
 impl Service {

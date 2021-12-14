@@ -248,6 +248,7 @@ dependencies = [
  "dyn-clonable",
  "futures",
  "git-version",
+ "grpc",
  "http",
  "humantime",
  "itertools",
@@ -1615,6 +1616,7 @@ dependencies = [
  "prost",
  "prost-build",
  "prost-types",
+ "tokio",
  "tonic",
  "tonic-build",
 ]
@@ -3010,6 +3012,7 @@ dependencies = [
  "ctrlp-tests",
  "futures",
  "git-version",
+ "grpc",
  "http",
  "humantime",
  "jsonwebtoken",

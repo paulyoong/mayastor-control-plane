@@ -120,14 +120,14 @@ message CreatePoolRequest {
 // Destroy Pool Request
 message DestroyPoolRequest {
   // id of the mayastor instance
-  string node_id = 1;
+  //string node_id = 1;
   // id of the pool
   string pool_id = 2;
 }
 
 // Service for managing storage pools
 service CoreGrpc {
-  rpc CreatePool (CreatePoolRequest) returns (Pool) {}
+  //rpc CreatePool (CreatePoolRequest) returns (Pool) {}
   rpc DestroyPool (DestroyPoolRequest) returns (google.protobuf.Empty) {}
-  rpc GetPools (GetPoolsRequest) returns (Pools) {}
+  //rpc GetPools (GetPoolsRequest) returns (Pools) {}
 }

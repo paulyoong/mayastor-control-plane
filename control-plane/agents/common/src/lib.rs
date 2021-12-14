@@ -30,6 +30,7 @@ use common_lib::{
         Channel,
     },
 };
+use grpc::traits::PoolOperations;
 use opentelemetry::trace::FutureExt;
 
 /// Agent level errors
@@ -284,6 +285,15 @@ impl Service {
         Fut: Future<Output = Service>,
     {
         configure(self).await
+    }
+
+    /// Configure self to have a pool transport
+    pub async fn with_pool_transport<T: PoolOperations + Send + Sync + 'static>(
+        self,
+        service: Arc<T>,
+    ) -> Self {
+        grpc::pool_transport::PoolServer::init(service).await;
+        self
     }
 
     /// Add a new subscriber on the default channel

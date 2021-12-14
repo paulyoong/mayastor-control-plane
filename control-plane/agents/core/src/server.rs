@@ -160,7 +160,8 @@ async fn server(cli_args: CliArgs) {
         .with_shared_state(registry.clone())
         .configure_async(node::configure)
         .await
-        .configure(pool::configure)
+        .configure_async(pool::configure)
+        .await
         .configure(nexus::configure)
         .configure(volume::configure)
         .configure(watcher::configure);
