@@ -33,8 +33,10 @@ use common_lib::{
             VolumeId, VolumeState, VolumeStatus,
         },
         store::{
+            definitions::ObjectKey,
             nexus::{NexusSpec, ReplicaUri},
             nexus_child::NexusChild,
+            nexus_persistence::NexusInfoKey,
             replica::ReplicaSpec,
             volume::{VolumeOperation, VolumeSpec},
             OperationMode, SpecStatus, SpecTransaction, TraceSpan, TraceStrLog,
@@ -431,6 +433,17 @@ impl ResourceSpecsLocked {
                             "Nexus destruction failed. This will be garbage collected later."
                         )
                     });
+                }
+
+                // Delete the NexusInfo entry persisted by Mayastor.
+                let key = NexusInfoKey::from((&request.uuid, &nexus.uuid));
+                match registry.delete_kv(&key.key()).await {
+                    Ok(_) => {
+                        tracing::info!(volume=%request.uuid, nexus=%nexus.uuid,"Deleted NexusInfo entry from persistent store")
+                    }
+                    Err(e) => {
+                        tracing::error!(volume=%request.uuid, nexus=%nexus.uuid, error=%e, "Failed to delete NexusInfo entry from persistent store")
+                    }
                 }
             }
 
@@ -1555,7 +1568,7 @@ impl SpecOperations for VolumeSpec {
                     })
                 } else {
                     match registry
-                        .get_nexus_info(self.last_nexus_id.as_ref(), true)
+                        .get_nexus_info(&self.uuid, self.last_nexus_id.as_ref(), true)
                         .await?
                     {
                         Some(info) => match info

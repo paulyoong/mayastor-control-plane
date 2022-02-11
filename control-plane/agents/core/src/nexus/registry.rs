@@ -1,7 +1,7 @@
 use crate::core::{registry::Registry, wrapper::*};
 use common::errors::{NexusNotFound, SvcError};
 use common_lib::types::v0::{
-    message_bus::{Nexus, NexusId, NodeId},
+    message_bus::{Nexus, NexusId, NodeId, VolumeId},
     store::nexus_persistence::{NexusInfo, NexusInfoKey},
 };
 use snafu::OptionExt;
@@ -67,6 +67,7 @@ impl Registry {
     /// missing_key_is_error determines whether not finding the key is considered an error or not
     pub(crate) async fn get_nexus_info(
         &self,
+        volume_uuid: &VolumeId,
         nexus_uuid: Option<&NexusId>,
         missing_key_is_error: bool,
     ) -> Result<Option<NexusInfo>, SvcError> {
@@ -74,7 +75,7 @@ impl Registry {
             None => Ok(None),
             Some(nexus_uuid) => {
                 match self
-                    .load_obj::<NexusInfo>(&NexusInfoKey::from(nexus_uuid))
+                    .load_obj::<NexusInfo>(&NexusInfoKey::from((volume_uuid, nexus_uuid)))
                     .await
                 {
                     Ok(mut info) => {

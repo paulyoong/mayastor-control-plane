@@ -6,7 +6,7 @@ use crate::core::{
 };
 use common::errors::SvcError;
 use common_lib::types::v0::{
-    message_bus::{ChildUri, NexusId, NodeId},
+    message_bus::{ChildUri, NexusId, NodeId, VolumeId},
     store::{nexus::NexusSpec, nexus_persistence::NexusInfo, volume::VolumeSpec},
 };
 use itertools::Itertools;
@@ -51,6 +51,14 @@ impl GetPersistedNexusChildren {
             Self::ReCreate(nexus) => Some(&nexus.uuid),
         }
     }
+
+    /// Get the volume ID associated with the persisted nexus info.
+    pub(crate) fn volume_id(&self) -> &VolumeId {
+        match self {
+            GetPersistedNexusChildren::Create((vol, _)) => &vol.uuid,
+            GetPersistedNexusChildren::ReCreate(nexus) => nexus.owner.as_ref().unwrap(),
+        }
+    }
 }
 
 /// `GetPersistedNexusChildren` context used by the filter functions for `GetPersistedNexusChildren`
@@ -81,8 +89,9 @@ impl GetPersistedNexusChildrenCtx {
         registry: &Registry,
         request: &GetPersistedNexusChildren,
     ) -> Result<Self, SvcError> {
+        // TODO: What if there isn't a volume???
         let nexus_info = registry
-            .get_nexus_info(request.nexus_info_id(), false)
+            .get_nexus_info(request.volume_id(), request.nexus_info_id(), false)
             .await?;
 
         Ok(Self {

@@ -1,5 +1,5 @@
 use crate::types::v0::{
-    message_bus::{NexusId, ReplicaId},
+    message_bus::{NexusId, ReplicaId, VolumeId},
     store::definitions::{ObjectKey, StorableObject, StorableObjectType},
 };
 use serde::{Deserialize, Serialize};
@@ -12,6 +12,9 @@ pub struct NexusInfo {
     #[serde(skip)]
     /// uuid of the Nexus
     pub uuid: NexusId,
+    #[serde(skip)]
+    /// uuid of the Volume
+    pub volume_uuid: VolumeId,
     /// Nexus destroyed successfully.
     pub clean_shutdown: bool,
     /// Information about children.
@@ -39,26 +42,39 @@ pub struct ChildInfo {
 }
 
 /// Key used by the store to uniquely identify a NexusInfo structure.
-pub struct NexusInfoKey(NexusId);
+pub struct NexusInfoKey {
+    volume_id: VolumeId,
+    nexus_id: NexusId,
+}
 
-impl From<&NexusId> for NexusInfoKey {
-    fn from(id: &NexusId) -> Self {
-        Self(id.clone())
+impl From<(&VolumeId, &NexusId)> for NexusInfoKey {
+    fn from((volume_id, nexus_id): (&VolumeId, &NexusId)) -> Self {
+        Self {
+            volume_id: volume_id.clone(),
+            nexus_id: nexus_id.clone(),
+        }
     }
 }
 
 impl ObjectKey for NexusInfoKey {
     fn key(&self) -> String {
-        // no key prefix (as it's written by mayastor)
-        self.key_uuid()
+        let namespace = std::env::var("MY_POD_NAMESPACE").unwrap_or_else(|_| "default".into());
+        let volume_uuid = self.volume_id.clone();
+        let nexus_uuid = self.nexus_id.clone();
+        format!(
+            "/namespace/{}/volume/{}/nexus/{}/info/",
+            namespace, volume_uuid, nexus_uuid
+        )
     }
 
     fn key_type(&self) -> StorableObjectType {
-        StorableObjectType::NexusInfo
+        // The key is generated directly from the `key()` function above.
+        unreachable!()
     }
 
     fn key_uuid(&self) -> String {
-        self.0.to_string()
+        // The key is generated directly from the `key()` function above.
+        unreachable!()
     }
 }
 
@@ -66,6 +82,9 @@ impl StorableObject for NexusInfo {
     type Key = NexusInfoKey;
 
     fn key(&self) -> Self::Key {
-        NexusInfoKey(self.uuid.clone())
+        NexusInfoKey {
+            volume_id: self.volume_uuid.clone(),
+            nexus_id: self.uuid.clone(),
+        }
     }
 }

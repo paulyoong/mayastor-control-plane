@@ -181,7 +181,11 @@ pub(crate) struct GetChildForRemovalContext {
 impl GetChildForRemovalContext {
     async fn new(registry: &Registry, request: &GetChildForRemoval) -> Result<Self, SvcError> {
         let nexus_info = registry
-            .get_nexus_info(request.spec.last_nexus_id.as_ref(), true)
+            .get_nexus_info(
+                &request.spec.uuid,
+                request.spec.last_nexus_id.as_ref(),
+                true,
+            )
             .await?;
 
         Ok(GetChildForRemovalContext {
@@ -406,7 +410,9 @@ impl VolumeReplicasForNexusCtx {
         vol_spec: &VolumeSpec,
         nx_spec: &NexusSpec,
     ) -> Result<Self, SvcError> {
-        let nexus_info = registry.get_nexus_info(Some(&nx_spec.uuid), true).await?;
+        let nexus_info = registry
+            .get_nexus_info(&vol_spec.uuid, Some(&nx_spec.uuid), true)
+            .await?;
 
         Ok(Self {
             registry: registry.clone(),

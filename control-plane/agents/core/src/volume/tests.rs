@@ -891,8 +891,9 @@ async fn nexus_persistence_test_iteration(
     tracing::debug!("arguments ({:?}, {:?}, {:?})", local, remote, fault);
     let allowed_nodes = vec![local.to_string(), remote.to_string()];
     let preferred_nodes: Vec<String> = vec![];
+    let volume_uuid: VolumeId = VolumeId::try_from("6e3cf927-80c2-47a8-adf0-95c486bdd7b7").unwrap();
     let volume = CreateVolume {
-        uuid: "6e3cf927-80c2-47a8-adf0-95c486bdd7b7".try_into().unwrap(),
+        uuid: volume_uuid.clone(),
         size: 5242880,
         replicas: 2,
         topology: Some(Topology::from(models::Topology::new_all(
@@ -932,10 +933,11 @@ async fn nexus_persistence_test_iteration(
         .await
         .expect("Failed to connect to etcd.");
     let mut nexus_info: NexusInfo = store
-        .get_obj(&NexusInfoKey::from(&nexus_uuid))
+        .get_obj(&NexusInfoKey::from((&volume_uuid, &nexus_uuid)))
         .await
         .unwrap();
     nexus_info.uuid = nexus_uuid.clone();
+    nexus_info.volume_uuid = volume_uuid.clone();
     tracing::info!("NexusInfo: {:?}", nexus_info);
 
     let replicas = replica_client
@@ -972,9 +974,10 @@ async fn nexus_persistence_test_iteration(
             nexus_info.clean_shutdown = false;
         }
     }
+
     store.put_obj(&nexus_info).await.unwrap();
     nexus_info = store
-        .get_obj(&NexusInfoKey::from(&nexus_uuid))
+        .get_obj(&NexusInfoKey::from((&volume_uuid, &nexus_uuid)))
         .await
         .unwrap();
     nexus_info.uuid = nexus_uuid.clone();
