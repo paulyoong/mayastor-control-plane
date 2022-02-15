@@ -62,7 +62,7 @@ impl ObjectKey for NexusInfoKey {
         let volume_uuid = self.volume_id.clone();
         let nexus_uuid = self.nexus_id.clone();
         format!(
-            "/namespace/{}/volume/{}/nexus/{}/info/",
+            "/namespace/{}/volume/{}/nexus/{}/info",
             namespace, volume_uuid, nexus_uuid
         )
     }

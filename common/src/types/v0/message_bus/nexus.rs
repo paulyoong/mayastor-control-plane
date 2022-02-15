@@ -1,6 +1,8 @@
 use super::*;
 
-use crate::types::v0::store::nexus_child::NexusChild;
+use crate::types::v0::store::{
+    definitions::ObjectKey, nexus_child::NexusChild, nexus_persistence::NexusInfoKey,
+};
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt::Debug};
 use strum_macros::{EnumString, ToString};
@@ -290,6 +292,13 @@ impl CreateNexus {
     pub fn name(&self) -> String {
         let name = self.owner.as_ref().map(|i| i.to_string());
         name.unwrap_or_else(|| self.uuid.to_string())
+    }
+
+    /// Return the key that should be used by Mayastor to persist the NexusInfo.
+    pub fn nexus_info_key(&self) -> Option<String> {
+        self.owner
+            .as_ref()
+            .map(|volume_id| NexusInfoKey::from((volume_id, &self.uuid)).key())
     }
 }
 
