@@ -14,7 +14,7 @@ pub struct NexusInfo {
     pub uuid: NexusId,
     #[serde(skip)]
     /// uuid of the Volume
-    pub volume_uuid: VolumeId,
+    pub volume_uuid: Option<VolumeId>,
     /// Nexus destroyed successfully.
     pub clean_shutdown: bool,
     /// Information about children.
@@ -42,15 +42,25 @@ pub struct ChildInfo {
 }
 
 /// Key used by the store to uniquely identify a NexusInfo structure.
+/// The volume is optional because a nexus can be created which is not associated with a volume.
 pub struct NexusInfoKey {
-    volume_id: VolumeId,
+    volume_id: Option<VolumeId>,
     nexus_id: NexusId,
+}
+
+impl From<&NexusId> for NexusInfoKey {
+    fn from(nexus_id: &NexusId) -> Self {
+        Self {
+            volume_id: None,
+            nexus_id: nexus_id.clone(),
+        }
+    }
 }
 
 impl From<(&VolumeId, &NexusId)> for NexusInfoKey {
     fn from((volume_id, nexus_id): (&VolumeId, &NexusId)) -> Self {
         Self {
-            volume_id: volume_id.clone(),
+            volume_id: Some(volume_id.clone()),
             nexus_id: nexus_id.clone(),
         }
     }
@@ -59,12 +69,18 @@ impl From<(&VolumeId, &NexusId)> for NexusInfoKey {
 impl ObjectKey for NexusInfoKey {
     fn key(&self) -> String {
         let namespace = std::env::var("MY_POD_NAMESPACE").unwrap_or_else(|_| "default".into());
-        let volume_uuid = self.volume_id.clone();
         let nexus_uuid = self.nexus_id.clone();
-        format!(
-            "/namespace/{}/volume/{}/nexus/{}/info",
-            namespace, volume_uuid, nexus_uuid
-        )
+        match &self.volume_id {
+            Some(volume_uuid) => {
+                format!(
+                    "/namespace/{}/volume/{}/nexus/{}/info",
+                    namespace, volume_uuid, nexus_uuid
+                )
+            }
+            None => {
+                format!("/namespace/{}/nexus/{}/info", namespace, nexus_uuid)
+            }
+        }
     }
 
     fn key_type(&self) -> StorableObjectType {

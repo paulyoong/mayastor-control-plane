@@ -937,7 +937,7 @@ async fn nexus_persistence_test_iteration(
         .await
         .unwrap();
     nexus_info.uuid = nexus_uuid.clone();
-    nexus_info.volume_uuid = volume_uuid.clone();
+    nexus_info.volume_uuid = Some(volume_uuid.clone());
     tracing::info!("NexusInfo: {:?}", nexus_info);
 
     let replicas = replica_client
