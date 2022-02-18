@@ -297,8 +297,8 @@ impl CreateNexus {
     /// Return the key that should be used by Mayastor to persist the NexusInfo.
     pub fn nexus_info_key(&self) -> String {
         match &self.owner {
-            Some(volume_id) => NexusInfoKey::from((volume_id, &self.uuid)).key(),
-            None => NexusInfoKey::from(&self.uuid).key(),
+            Some(volume_id) => NexusInfoKey::new(&Some(volume_id.clone()), &self.uuid).key(),
+            None => NexusInfoKey::new(&None, &self.uuid).key(),
         }
     }
 }

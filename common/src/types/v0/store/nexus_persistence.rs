@@ -3,7 +3,7 @@ use crate::types::v0::{
     store::definitions::{ObjectKey, StorableObject, StorableObjectType},
 };
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 
 /// Definition of the nexus information that gets saved in the persistent
 /// store.
@@ -48,20 +48,24 @@ pub struct NexusInfoKey {
     nexus_id: NexusId,
 }
 
-impl From<&NexusId> for NexusInfoKey {
-    fn from(nexus_id: &NexusId) -> Self {
+impl NexusInfoKey {
+    pub fn new(volume_id: &Option<VolumeId>, nexus_id: &NexusId) -> Self {
         Self {
-            volume_id: None,
+            volume_id: volume_id.clone(),
             nexus_id: nexus_id.clone(),
         }
     }
 }
 
-impl From<(&VolumeId, &NexusId)> for NexusInfoKey {
-    fn from((volume_id, nexus_id): (&VolumeId, &NexusId)) -> Self {
-        Self {
-            volume_id: Some(volume_id.clone()),
-            nexus_id: nexus_id.clone(),
+impl std::fmt::Display for NexusInfoKey {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self.volume_id {
+            Some(volume_id) => {
+                write!(f, "volume: {}, nexus: {}", volume_id, self.nexus_id)
+            }
+            None => {
+                write!(f, "nexus: {}", self.nexus_id)
+            }
         }
     }
 }

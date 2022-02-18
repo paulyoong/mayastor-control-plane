@@ -436,15 +436,11 @@ impl ResourceSpecsLocked {
                 }
 
                 // Delete the NexusInfo entry persisted by Mayastor.
-                let key = NexusInfoKey::from((&request.uuid, &nexus.uuid));
-                match registry.delete_kv(&key.key()).await {
-                    Ok(_) => {
-                        tracing::info!(volume=%request.uuid, nexus=%nexus.uuid,"Deleted NexusInfo entry from persistent store")
-                    }
-                    Err(e) => {
-                        tracing::error!(volume=%request.uuid, nexus=%nexus.uuid, error=%e, "Failed to delete NexusInfo entry from persistent store")
-                    }
-                }
+                Self::delete_nexus_info(
+                    &NexusInfoKey::new(&Some(request.uuid.clone()), &nexus.uuid),
+                    registry,
+                )
+                .await;
             }
 
             let replicas = self.get_volume_replicas(&request.uuid);
@@ -580,6 +576,17 @@ impl ResourceSpecsLocked {
         let nexus =
             SpecOperations::validate_update_step(registry, result, &spec, &spec_clone).await?;
 
+        let (volume_id, last_nexus_id) = {
+            let volume_spec = spec.lock();
+            (volume_spec.uuid.clone(), volume_spec.last_nexus_id.clone())
+        };
+
+        // If there was a previous nexus we should delete the persisted NexusInfo structure.
+        if let Some(nexus_id) = last_nexus_id {
+            Self::delete_nexus_info(&NexusInfoKey::new(&Some(volume_id), &nexus_id), registry)
+                .await;
+        }
+
         // Share the Nexus if it was requested
         let mut result = Ok(nexus.clone());
         if let Some(share) = request.share {
@@ -595,6 +602,19 @@ impl ResourceSpecsLocked {
             .notify_if_degraded(&volume, PollTriggerEvent::VolumeDegraded)
             .await;
         Ok(volume)
+    }
+
+    // Delete the NexusInfo key from the persistent store.
+    // If deletion fails we just log it and continue.
+    async fn delete_nexus_info(key: &NexusInfoKey, registry: &Registry) {
+        match registry.delete_kv(&key.key()).await {
+            Ok(_) => {
+                tracing::info!(nexus_info_key=%key,"Deleted NexusInfo entry from persistent store")
+            }
+            Err(e) => {
+                tracing::error!(nexus_info_key=%key, error=%e, "Failed to delete NexusInfo entry from persistent store")
+            }
+        }
     }
 
     /// Unpublish a volume based on the given `UnpublishVolume` request
@@ -1568,7 +1588,7 @@ impl SpecOperations for VolumeSpec {
                     })
                 } else {
                     match registry
-                        .get_nexus_info(&self.uuid, self.last_nexus_id.as_ref(), true)
+                        .get_nexus_info(Some(&self.uuid), self.last_nexus_id.as_ref(), true)
                         .await?
                     {
                         Some(info) => match info

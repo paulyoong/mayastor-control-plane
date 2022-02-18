@@ -182,7 +182,7 @@ impl GetChildForRemovalContext {
     async fn new(registry: &Registry, request: &GetChildForRemoval) -> Result<Self, SvcError> {
         let nexus_info = registry
             .get_nexus_info(
-                &request.spec.uuid,
+                Some(&request.spec.uuid),
                 request.spec.last_nexus_id.as_ref(),
                 true,
             )
@@ -411,7 +411,7 @@ impl VolumeReplicasForNexusCtx {
         nx_spec: &NexusSpec,
     ) -> Result<Self, SvcError> {
         let nexus_info = registry
-            .get_nexus_info(&vol_spec.uuid, Some(&nx_spec.uuid), true)
+            .get_nexus_info(Some(&vol_spec.uuid), Some(&nx_spec.uuid), true)
             .await?;
 
         Ok(Self {

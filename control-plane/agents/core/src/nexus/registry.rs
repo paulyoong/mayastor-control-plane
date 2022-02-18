@@ -67,17 +67,19 @@ impl Registry {
     /// missing_key_is_error determines whether not finding the key is considered an error or not
     pub(crate) async fn get_nexus_info(
         &self,
-        volume_uuid: &VolumeId,
+        volume_uuid: Option<&VolumeId>,
         nexus_uuid: Option<&NexusId>,
         missing_key_is_error: bool,
     ) -> Result<Option<NexusInfo>, SvcError> {
         match nexus_uuid {
             None => Ok(None),
             Some(nexus_uuid) => {
-                match self
-                    .load_obj::<NexusInfo>(&NexusInfoKey::from((volume_uuid, nexus_uuid)))
-                    .await
-                {
+                let nexus_info_key = match volume_uuid {
+                    Some(volume_id) => NexusInfoKey::new(&Some(volume_id.clone()), nexus_uuid),
+                    None => NexusInfoKey::new(&None, nexus_uuid),
+                };
+
+                match self.load_obj::<NexusInfo>(&nexus_info_key).await {
                     Ok(mut info) => {
                         info.uuid = nexus_uuid.clone();
                         Ok(Some(info))

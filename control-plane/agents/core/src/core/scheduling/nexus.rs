@@ -53,10 +53,13 @@ impl GetPersistedNexusChildren {
     }
 
     /// Get the volume ID associated with the persisted nexus info.
-    pub(crate) fn volume_id(&self) -> &VolumeId {
+    pub(crate) fn volume_id(&self) -> Option<&VolumeId> {
         match self {
-            GetPersistedNexusChildren::Create((vol, _)) => &vol.uuid,
-            GetPersistedNexusChildren::ReCreate(nexus) => nexus.owner.as_ref().unwrap(),
+            GetPersistedNexusChildren::Create((vol, _)) => Some(&vol.uuid),
+            GetPersistedNexusChildren::ReCreate(nexus) => match nexus.owner.as_ref() {
+                Some(volume_id) => Some(volume_id),
+                None => None,
+            },
         }
     }
 }
@@ -89,7 +92,6 @@ impl GetPersistedNexusChildrenCtx {
         registry: &Registry,
         request: &GetPersistedNexusChildren,
     ) -> Result<Self, SvcError> {
-        // TODO: What if there isn't a volume???
         let nexus_info = registry
             .get_nexus_info(request.volume_id(), request.nexus_info_id(), false)
             .await?;

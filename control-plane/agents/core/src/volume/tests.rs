@@ -933,7 +933,7 @@ async fn nexus_persistence_test_iteration(
         .await
         .expect("Failed to connect to etcd.");
     let mut nexus_info: NexusInfo = store
-        .get_obj(&NexusInfoKey::from((&volume_uuid, &nexus_uuid)))
+        .get_obj(&NexusInfoKey::new(&Some(volume_uuid.clone()), &nexus_uuid))
         .await
         .unwrap();
     nexus_info.uuid = nexus_uuid.clone();
@@ -977,7 +977,7 @@ async fn nexus_persistence_test_iteration(
 
     store.put_obj(&nexus_info).await.unwrap();
     nexus_info = store
-        .get_obj(&NexusInfoKey::from((&volume_uuid, &nexus_uuid)))
+        .get_obj(&NexusInfoKey::new(&Some(volume_uuid.clone()), &nexus_uuid))
         .await
         .unwrap();
     nexus_info.uuid = nexus_uuid.clone();
