@@ -46,6 +46,13 @@ pub enum ScaleResources {
     },
 }
 
+/// The types of resources that support cordoning.
+#[derive(clap::Subcommand, Debug)]
+pub enum CordonResources {
+    /// Cordon the node with the given ID.
+    Node { id: NodeId, label: String },
+}
+
 /// Tabular Output Tests
 #[cfg(test)]
 mod tests;

@@ -38,8 +38,8 @@ Feature: Cordoning
 
   Scenario: Deleting resources on a cordoned node
     Given a cordoned node with resources
-    When the control plane attempts to delete a resource on a cordoned node
-    Then the resource should be deleted
+    When the control plane attempts to delete resources on a cordoned node
+    Then the resources should be deleted
 
   Scenario: Restarting a cordoned node
     Given a cordoned node with resources

@@ -1,8 +1,8 @@
 use crate::{
-    operations::{Get, List},
+    operations::{Cordoning, Get, List},
     resources::{
         utils,
-        utils::{CreateRows, GetHeaderRow},
+        utils::{CreateRows, GetHeaderRow, OutputFormat},
         NodeId,
     },
     rest_wrapper::RestClient,
@@ -26,7 +26,12 @@ impl CreateRows for openapi::models::Node {
             grpc_endpoint: spec.grpc_endpoint,
             status: openapi::models::NodeStatus::Unknown,
         });
-        let rows = vec![row![self.id, state.grpc_endpoint, state.status,]];
+        let rows = vec![row![
+            self.id,
+            state.grpc_endpoint,
+            state.status,
+            !spec.cordon_labels.is_empty(),
+        ]];
         rows
     }
 }
@@ -69,6 +74,66 @@ impl Get for Node {
             }
             Err(e) => {
                 println!("Failed to get node {}. Error {}", id, e)
+            }
+        }
+    }
+}
+
+#[async_trait(?Send)]
+impl Cordoning for Node {
+    type ID = NodeId;
+    async fn cordon(id: &Self::ID, label: &str, output: &OutputFormat) {
+        match RestClient::client()
+            .nodes_api()
+            .put_node_cordon(id, label)
+            .await
+        {
+            Ok(node) => match output {
+                OutputFormat::Yaml | OutputFormat::Json => {
+                    // Print json or yaml based on output format.
+                    utils::print_table(output, node.into_body());
+                }
+                OutputFormat::None => {
+                    // In case the output format is not specified, show a success message.
+                    println!("Node {} cordoned successfully", id)
+                }
+            },
+            Err(e) => {
+                println!("Failed to cordon node {}. Error {}", id, e)
+            }
+        }
+    }
+
+    async fn uncordon(id: &Self::ID, label: &str, output: &OutputFormat) {
+        match RestClient::client()
+            .nodes_api()
+            .delete_node_cordon(id, label)
+            .await
+        {
+            Ok(node) => match output {
+                OutputFormat::Yaml | OutputFormat::Json => {
+                    // Print json or yaml based on output format.
+                    utils::print_table(output, node.into_body());
+                }
+                OutputFormat::None => {
+                    // In case the output format is not specified, show a success message.
+                    let cordon_labels = node
+                        .into_body()
+                        .spec
+                        .map(|node_spec| node_spec.cordon_labels)
+                        .unwrap_or_default();
+                    if cordon_labels.is_empty() {
+                        println!("Node {} successfully uncordoned", id);
+                    } else {
+                        println!(
+                            "Cordon label successfully removed. Remaining cordon labels {:?}",
+                            cordon_labels
+                        );
+                    }
+                }
+            },
+            Err(e) => {
+                println!("Failed to uncordon node {}. Error {}", id, e)
             }
         }
     }

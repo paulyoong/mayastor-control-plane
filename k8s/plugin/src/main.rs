@@ -3,8 +3,8 @@ use clap::Parser;
 use openapi::tower::client::Url;
 use opentelemetry::global;
 use plugin::{
-    operations::{Get, GetBlockDevices, List, ReplicaTopology, Scale},
-    resources::{blockdevice, node, pool, volume, GetResources, ScaleResources},
+    operations::{Cordoning, Get, GetBlockDevices, List, ReplicaTopology, Scale},
+    resources::{blockdevice, node, pool, volume, CordonResources, GetResources, ScaleResources},
     rest_wrapper::RestClient,
 };
 use std::{
@@ -94,6 +94,16 @@ async fn execute(cli_args: CliArgs) {
         Operations::Scale(resource) => match resource {
             ScaleResources::Volume { id, replica_count } => {
                 volume::Volume::scale(&id, replica_count, &cli_args.output).await
+            }
+        },
+        Operations::Cordon(resource) => match resource {
+            CordonResources::Node { id, label } => {
+                node::Node::cordon(&id, &label, &cli_args.output).await
+            }
+        },
+        Operations::Uncordon(resource) => match resource {
+            CordonResources::Node { id, label } => {
+                node::Node::uncordon(&id, &label, &cli_args.output).await
             }
         },
         Operations::Dump(resources) => {
