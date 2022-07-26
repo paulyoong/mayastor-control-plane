@@ -613,7 +613,7 @@ pub trait CreateVolumeInfo: Send + Sync + std::fmt::Debug {
     fn topology(&self) -> Option<Topology>;
     /// Labels to be added to the volumes for topology based scheduling
     fn labels(&self) -> Option<VolumeLabels>;
-    /// Flag indicating thin provisioning
+    /// Flag indicating whether the volume should be thin provisioned
     fn thin(&self) -> bool;
 }
 

@@ -162,7 +162,7 @@ pub struct CreateVolumeBody {
     pub topology: Option<Topology>,
     /// Volume labels, used ot store custom volume information
     pub labels: Option<VolumeLabels>,
-    /// Flag indicating whether the volume is thin provisioned
+    /// Flag indicating whether the volume should be thin provisioned
     pub thin: bool,
 }
 impl From<models::CreateVolumeBody> for CreateVolumeBody {

@@ -227,11 +227,6 @@ impl rpc::csi::controller_server::Controller for CsiControllerSvc {
             return Err(Status::invalid_argument("Invalid filesystem type"));
         }
 
-        let thin = match args.parameters.get("thin") {
-            Some(value) => value == "true",
-            None => false,
-        };
-
         // Check storage protocol.
         let protocol = parse_protocol(args.parameters.get("protocol"))?;
 
@@ -312,6 +307,11 @@ impl rpc::csi::controller_server::Controller for CsiControllerSvc {
         })?;
 
         let vt_mapper = VolumeTopologyMapper::init().await?;
+
+        let thin = match args.parameters.get("thin") {
+            Some(value) => value == "true",
+            None => false,
+        };
 
         // First check if the volume already exists.
         match IoEngineApiClient::get_client().get_volume(&u).await {

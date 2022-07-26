@@ -359,7 +359,7 @@ pub struct CreateVolume {
     pub topology: Option<Topology>,
     /// volume labels
     pub labels: Option<VolumeLabels>,
-    /// flag indicating thin provisioning
+    /// flag indicating whether the volume should be thin provisioned
     pub thin: bool,
 }
 

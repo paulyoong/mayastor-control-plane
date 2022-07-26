@@ -131,7 +131,7 @@ resource "libvirt_domain" "ubuntu-domain" {
 
   cloudinit = libvirt_cloudinit_disk.commoninit[count.index].id
 
-  cpu {
+  cpu = {
     mode = "host-passthrough"
   }
 

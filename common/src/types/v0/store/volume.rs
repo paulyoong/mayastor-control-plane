@@ -102,7 +102,7 @@ pub struct VolumeSpec {
     pub last_nexus_id: Option<NexusId>,
     /// Record of the operation in progress
     pub operation: Option<VolumeOperationState>,
-    /// Flag indicating thin provisioning
+    /// Flag indicating whether the volume should be thin provisioned
     pub thin: bool,
 }
 
